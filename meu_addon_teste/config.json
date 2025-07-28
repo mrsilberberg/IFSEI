@@ -1,0 +1,15 @@
+{
+  "name": "Meu Addon de Teste",
+  "version": "1.0",
+  "slug": "meu_addon_teste",
+  "description": "Addon de teste criado por Murilo",
+  "startup": "application",
+  "boot": "auto",
+  "homeassistant": "2023.0.0",
+  "arch": ["amd64", "armv7", "aarch64"],
+  "options": {},
+  "schema": {},
+  "init": false,
+  "privileged": [],
+  "host_network": true
+}
