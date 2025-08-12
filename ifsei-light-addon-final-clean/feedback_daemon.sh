@@ -18,22 +18,25 @@ echo "📄 Log enviado: $LOG_SENT"
 # Cria o FIFO se não existir
 [ -p "$FIFO" ] || mkfifo "$FIFO"
 
-# Abre conexão TCP bidirecional: leitura da central e escrita via FIFO
-while true; do
-  echo "🔌 Abrindo conexão TCP com IFSEI..."
-  nc -v "$IP" "$PORT" < "$FIFO" | while read -r line; do
-    if [ -n "$line" ]; then
-      echo "$(date '+%F %T') - RX - $line" | tee -a "$LOG_FEEDBACK"
-    fi
+# Conexão TCP contínua - escuta e extrai feedbacks em tempo real
+{
+  while true; do
+    echo "📥 Aguardando dados em tempo real de $IP:$PORT..."
+    nc -v "$IP" "$PORT" < "$FIFO" | tr '\r' '\n' \
+    | grep -o "D[0-9][0-9]C[0-9][0-9]Z[0-9]\\{3\\}Z[0-9]\\{3\\}Z[0-9]\\{3\\}Z[0-9]\\{3\\}Z[0-9]\\{3\\}Z[0-9]\\{3\\}Z[0-9]\\{3\\}Z[0-9]\\{3\\}" \
+    | while read -r status; do
+        echo "$(date '+%F %T') - EVENT - $status" | tee -a "$LOG_FEEDBACK"
+      done
+    echo "⚠️ Conexão encerrada. Reconectando..."
+    sleep 1
   done
-  echo "⚠️ Conexão encerrada, tentando reconectar em 2s..."
-  sleep 2
-done &
+} &
 
-# Monitor FIFO para comandos enviados (log opcional)
+# Thread que monitora e envia comandos via FIFO
 while true; do
   if read -r CMD < "$FIFO"; then
-    echo "$(date '+%F %T') - TX - $CMD" >> "$LOG_SENT"
+    echo "$(date '+%F %T') - TX - $CMD" | tee -a "$LOG_SENT"
     echo -ne "$CMD" > "$FIFO"
   fi
 done
+
