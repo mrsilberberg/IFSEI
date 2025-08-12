@@ -20,14 +20,15 @@ while true; do
     CMD="\$D${MOD}ST\r"
     echo "➡️  Enviando: $CMD"
 
-    # Envia o comando e lê a resposta
-    (echo -ne "$CMD"; sleep 5) | nc -w5 "$IP" "$PORT" | while IFS=$'\r' read -r line; do
-      if [ -n "$line" ]; then
-        echo "$(date '+%F %T') - Mod $MOD - $line" | tee -a "$LOG_FILE"
-      fi
-    done
+    # Envia o comando e extrai apenas o bloco útil
+    (echo -ne "$CMD"; sleep 0.5) | nc -w0.5 "$IP" "$PORT" \
+    | tr '\r' '\n' \
+    | grep -o "D${MOD}C[0-9][0-9]Z[0-9]\\{3\\}Z[0-9]\\{3\\}Z[0-9]\\{3\\}Z[0-9]\\{3\\}Z[0-9]\\{3\\}Z[0-9]\\{3\\}Z[0-9]\\{3\\}Z[0-9]\\{3\\}" \
+    | while read -r status; do
+        echo "$(date '+%F %T') - Mod $MOD - $status" | tee -a "$LOG_FILE"
+      done
 
-    sleep 5
+    sleep 0.2
   done
 
   sleep "$POLL_INTERVAL"
