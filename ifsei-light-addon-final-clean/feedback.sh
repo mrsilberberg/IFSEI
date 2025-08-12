@@ -21,7 +21,7 @@ while true; do
     echo "➡️  Enviando: $CMD"
 
     # Envia o comando e lê a resposta
-    echo -ne "$CMD" | nc -w2 $IP $PORT | while read -r line; do
+    (echo -ne "$CMD"; sleep 1) | nc -w6 "$IP" "$PORT" | while IFS=$'\r' read -r line; do
       if [ -n "$line" ]; then
         echo "$(date '+%F %T') - Mod $MOD - $line" | tee -a "$LOG_FILE"
       fi
