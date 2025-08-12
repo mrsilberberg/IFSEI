@@ -45,7 +45,7 @@ for MOD in "${MOD_DIMMER[@]}"; do
       # ------------------------
       # Módulo: $MOD | Zona: $ZONE
       $ENTITY:
-        friendly_name: "Luz Mód $MOD Zona $ZONE"
+        friendly_name: "Scenario Classic Mód $MOD Canal $ZONE"
         turn_on:
           service: shell_command.ifsei_set
           data:
@@ -83,7 +83,7 @@ for MOD in "${MOD_ONOFF[@]}"; do
       # ------------------------
       # Módulo: $MOD | Zona: $ZONE
       $ENTITY:
-        friendly_name: "Luz Mód $MOD Zona $ZONE"
+        friendly_name: "Scenario Classic Mód $MOD Canal $ZONE"
         turn_on:
           service: shell_command.ifsei_set
           data:
