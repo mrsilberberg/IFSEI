@@ -2,4 +2,7 @@
 echo "Gerando arquivos YAML e comandos..."
 /generate.sh
 echo "Finalizado."
-sleep 10
+
+echo "Iniciando monitoramento de feedback..."
+/feedback.sh &
+sleep infinity
