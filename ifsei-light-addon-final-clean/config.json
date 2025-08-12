@@ -9,12 +9,14 @@
   "options": {
     "ip": "192.168.1.20",
     "port": 28000,
+    "poll-interval": 5,
     "module-dimmer": ["00", "01"],
     "module-onoff": ["05", "06"]
   },
   "schema": {
     "ip": "str",
     "port": "int",
+    "poll-interval": "int",
     "module-dimmer": ["str"],
     "module-onoff": ["str"]
   },
