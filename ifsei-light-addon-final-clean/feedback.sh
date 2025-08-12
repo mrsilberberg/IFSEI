@@ -4,32 +4,28 @@ CONFIG="/data/options.json"
 IP=$(jq -r .ip "$CONFIG")
 PORT=$(jq -r .port "$CONFIG")
 LOG_FILE="/config/ifsei_feedback.log"
-POLL_INTERVAL=$(jq -r '."poll-interval" // 5' "$CONFIG")
 
-readarray -t MOD_DIMMER < <(jq -r '.["module-dimmer"][]?' "$CONFIG")
-readarray -t MOD_ONOFF  < <(jq -r '.["module-onoff"][]?' "$CONFIG")
-MODULES=("${MOD_DIMMER[@]}" "${MOD_ONOFF[@]}")
-
-echo "📡 Polling IFSEI em $IP:$PORT"
-echo "⏱  Intervalo: ${POLL_INTERVAL}s"
-echo "📄 Log: $LOG_FILE"
+echo "📡 Monitoramento IFSEI em $IP:$PORT usando MON6"
 : > "$LOG_FILE"
 
 while true; do
-  for MOD in "${MODULES[@]}"; do
-    CMD="\$D${MOD}ST\r"
-    echo "➡️  Enviando: $CMD"
+    echo "🔄 Conectando..."
+    
+    {
+        # Ativa o nível de monitoramento 6
+        echo -ne "\$MON6\r"
+        sleep 0.1
 
-    # Envia o comando e extrai apenas o bloco útil
-    (echo -ne "$CMD"; ) | nc -w1 "$IP" "$PORT" \
-    | tr '\r' '\n' \
-    | grep -o "D${MOD}C[0-9][0-9]Z[0-9]\\{3\\}Z[0-9]\\{3\\}Z[0-9]\\{3\\}Z[0-9]\\{3\\}Z[0-9]\\{3\\}Z[0-9]\\{3\\}Z[0-9]\\{3\\}Z[0-9]\\{3\\}" \
-    | while read -r status; do
-        echo "$(date '+%F %T') - Mod $MOD - $status" | tee -a "$LOG_FILE"
-      done
+        # Mantém a conexão aberta
+        while read -r line; do
+            # Remove \r e imprime no log
+            clean_line=$(echo "$line" | tr -d '\r')
+            if [ -n "$clean_line" ]; then
+                echo "$(date '+%F %T') - $clean_line" | tee -a "$LOG_FILE"
+            fi
+        done
+    } | nc "$IP" "$PORT"
 
-    sleep 0.1
-  done
-
-  sleep "$POLL_INTERVAL"
+    echo "⚠️ Conexão perdida. Tentando reconectar em 2 segundos..."
+    sleep 2
 done
