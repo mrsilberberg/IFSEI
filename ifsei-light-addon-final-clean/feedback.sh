@@ -10,36 +10,25 @@ readarray -t MOD_DIMMER < <(jq -r '.["module-dimmer"][]?' "$CONFIG")
 readarray -t MOD_ONOFF  < <(jq -r '.["module-onoff"][]?' "$CONFIG")
 MODULES=("${MOD_DIMMER[@]}" "${MOD_ONOFF[@]}")
 
-FIFO="/tmp/ifsei_pipe"
-
-echo "📡 Conexão TCP persistente com IFSEI $IP:$PORT"
-echo "⏱  Intervalo de polling: ${POLL_INTERVAL}s"
+echo "📡 Polling IFSEI em $IP:$PORT"
+echo "⏱  Intervalo: ${POLL_INTERVAL}s"
 echo "📄 Log: $LOG_FILE"
 : > "$LOG_FILE"
 
-# Cria FIFO se não existir
-[ -p "$FIFO" ] || mkfifo "$FIFO"
-
-# Estabelece conexão bidirecional (entrada: FIFO | saída: leitura)
-# A saída é processada em tempo real
-nc $IP $PORT < "$FIFO" | while read -r line; do
-  if [ -n "$line" ]; then
-    echo "$(date '+%F %T') - RX: $line" | tee -a "$LOG_FILE"
-  fi
-done &
-
-# Função de envio de comandos via FIFO
-send() {
-  echo -ne "$1" > "$FIFO"
-}
-
-# Loop de polling periódico via FIFO (usando conexão já aberta)
 while true; do
   for MOD in "${MODULES[@]}"; do
     CMD="\$D${MOD}ST\r"
-    echo "➡️  Enviando via FIFO: $CMD"
-    send "$CMD"
+    echo "➡️  Enviando: $CMD"
+
+    # Envia o comando e lê a resposta
+    echo -ne "$CMD" | nc -w2 $IP $PORT | while read -r line; do
+      if [ -n "$line" ]; then
+        echo "$(date '+%F %T') - Mod $MOD - $line" | tee -a "$LOG_FILE"
+      fi
+    done
+
     sleep 0.3
   done
+
   sleep "$POLL_INTERVAL"
 done
