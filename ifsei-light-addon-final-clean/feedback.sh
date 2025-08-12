@@ -21,14 +21,14 @@ while true; do
     echo "➡️  Enviando: $CMD"
 
     # Envia o comando e extrai apenas o bloco útil
-    (echo -ne "$CMD"; sleep 1) | nc -w1 "$IP" "$PORT" \
+    (echo -ne "$CMD"; ) | nc -w1 "$IP" "$PORT" \
     | tr '\r' '\n' \
     | grep -o "D${MOD}C[0-9][0-9]Z[0-9]\\{3\\}Z[0-9]\\{3\\}Z[0-9]\\{3\\}Z[0-9]\\{3\\}Z[0-9]\\{3\\}Z[0-9]\\{3\\}Z[0-9]\\{3\\}Z[0-9]\\{3\\}" \
     | while read -r status; do
         echo "$(date '+%F %T') - Mod $MOD - $status" | tee -a "$LOG_FILE"
       done
 
-    sleep 0.2
+    sleep 0.1
   done
 
   sleep "$POLL_INTERVAL"
