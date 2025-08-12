@@ -1,0 +1,26 @@
+{
+  "name": "IFSEI Light",
+  "version": "2.1.6",
+  "slug": "ifsei_light_generator_opts",
+  "description": "Gera entidades light.template com base nas opções de configuração do add-on",
+  "url": "https://example.com/docs/ifsei_light_generator", 
+  "stage": "stable",
+  "init": false,
+  "options": {
+    "ip": "192.168.1.20",
+    "port": 28000,
+    "module-dimmer": ["00", "01"],
+    "module-onoff": ["05", "06"]
+  },
+  "schema": {
+    "ip": "str",
+    "port": "int",
+    "module-dimmer": ["str"],
+    "module-onoff": ["str"]
+  },
+  "arch": ["amd64", "armv7", "armhf", "aarch64"],
+  "startup": "once",
+  "boot": "manual",
+  "map": ["config:rw"],
+  "host_network": true
+}
