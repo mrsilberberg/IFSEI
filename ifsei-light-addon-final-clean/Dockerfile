@@ -4,6 +4,8 @@ RUN apk add --no-cache bash jq netcat-openbsd
 
 COPY run.sh /run.sh
 COPY generate.sh /generate.sh
-RUN chmod +x /run.sh /generate.sh
+COPY feedback.sh /feedback.sh
+RUN chmod +x /run.sh /generate.sh /feedback.sh
+
 
 CMD ["/run.sh"]
