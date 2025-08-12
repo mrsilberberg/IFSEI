@@ -21,13 +21,13 @@ while true; do
     echo "➡️  Enviando: $CMD"
 
     # Envia o comando e lê a resposta
-    (echo -ne "$CMD"; sleep 1) | nc -w6 "$IP" "$PORT" | while IFS=$'\r' read -r line; do
+    (echo -ne "$CMD"; sleep 5) | nc -w5 "$IP" "$PORT" | while IFS=$'\r' read -r line; do
       if [ -n "$line" ]; then
         echo "$(date '+%F %T') - Mod $MOD - $line" | tee -a "$LOG_FILE"
       fi
     done
 
-    sleep 0.3
+    sleep 5
   done
 
   sleep "$POLL_INTERVAL"
