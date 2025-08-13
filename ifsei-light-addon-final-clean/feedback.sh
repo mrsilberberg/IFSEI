@@ -15,9 +15,9 @@ echo "Log: $LOG_FILE"
 echo "=============================="
 
 # 1️⃣ Ativa MON6 (uma vez)
-echo "⚙️ Ativando MON6..."
-echo -ne '$MON6\r' | nc -w1 "$IP" "$PORT" || true
-sleep 0.2
+#echo "⚙️ Ativando MON6..."
+#echo -ne '$MON6\r' | nc -w1 "$IP" "$PORT" || true
+#sleep 0.2
 
 # 2️⃣ Inicia listener passivo com reconexão automática
 echo "📡 Iniciando listener passivo..."
