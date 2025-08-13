@@ -23,8 +23,7 @@ sleep 0.2
 echo "📡 Iniciando listener passivo (apenas C00, sobrescrevendo)..."
 
 while true; do
-    nc "$IP" "$PORT" | grep -o "\*D[0-9][0-9]C00Z[0-9]\{3\}Z[0-9]\{3\}Z[0-9]\{3\}Z[0-9]\{3\}Z[0-9]\{3\}Z[0-9]\{3\}Z[0-9]\{3\}Z[0-9]\{3\}" |
-    while read -r linha; do
+    nc "$IP" "$PORT" | while read -r linha; do
         echo "$linha" > "$LOG_FILE"
     done
     echo "⚠️ Conexão encerrada. Tentando reconectar em 2s..."
