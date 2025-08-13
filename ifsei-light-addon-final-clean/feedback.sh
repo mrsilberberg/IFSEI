@@ -6,19 +6,24 @@ IP=$(jq -r .ip "$CONFIG")
 PORT=$(jq -r .port "$CONFIG")
 LOG_FILE="/config/ifsei_feedback.log"
 
+echo "=============================="
+echo "  IFSEI Add-on - Modo Feedback "
+echo "=============================="
+echo "IP: $IP"
+echo "Porta: $PORT"
+echo "Log: $LOG_FILE"
+echo "=============================="
+
+# 1️⃣ Ativa MON6 (uma vez)
 echo "⚙️ Ativando MON6..."
 echo -ne '$MON6\r' | nc -w1 "$IP" "$PORT" || true
 sleep 0.2
 
-echo "📡 Escutando apenas C00 (sobrescrevendo arquivo a cada atualização)..."
+# 2️⃣ Inicia listener passivo com reconexão automática
+echo "📡 Iniciando listener passivo..."
 
 while true; do
-    nc "$IP" "$PORT" \
-    | tr -d '\r' \
-    | grep -o "D[0-9][0-9]C00[Zz][0-9]\{3\}\([Zz][0-9]\{3\}\)\{7\}" \
-    | while read -r status; do
-        echo "$(date '+%F %T') - $status" | tee "$LOG_FILE"
-      done
-    echo "⚠️ Conexão encerrada. Reabrindo em 2s..."
+    nc "$IP" "$PORT" | tee "$LOG_FILE"
+    echo "⚠️ Conexão encerrada. Tentando reconectar em 2s..."
     sleep 2
 done
