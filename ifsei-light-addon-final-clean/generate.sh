@@ -26,7 +26,7 @@ EOF
 for MOD in "${MODULES[@]}"; do
   echo "  ifsei_mod${MOD}_feedback:" >> "$OUTPUT"
   echo "    name: Feedback módulo ${MOD}" >> "$OUTPUT"
-  echo "    initial: """ >> "$OUTPUT"
+  #echo "    initial: """ >> "$OUTPUT"
   echo "    max: 255" >> "$OUTPUT"
   echo "    mode: text" >> "$OUTPUT"
   echo "" >> "$OUTPUT"
