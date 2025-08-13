@@ -25,7 +25,7 @@ echo "📡 Iniciando listener passivo (apenas C00, sobrescrevendo)..."
 while true; do
     nc "$IP" "$PORT" \
     | tr -d '\r' \
-    | grep --line-buffered -E "^\*D[0-9]{2}C00Z[0-9]{3}Z[0-9]{3}Z[0-9]{3}Z[0-9]{3}Z[0-9]{3}Z[0-9]{3}Z[0-9]{3}Z[0-9]{3}" \
+    | grep -E "^\*D[0-9]{2}C00Z[0-9]{3}Z[0-9]{3}Z[0-9]{3}Z[0-9]{3}Z[0-9]{3}Z[0-9]{3}Z[0-9]{3}Z[0-9]{3}" \
     | while read -r status; do
         echo "$status" > "$LOG_FILE"
     done
