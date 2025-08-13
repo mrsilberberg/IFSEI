@@ -19,33 +19,11 @@ echo "⚙️ Ativando MON6..."
 echo -ne '$MON6\r' | nc -w1 "$IP" "$PORT" || true
 sleep 0.2
 
-# 2️⃣ Inicia listener passivo (apenas C00, sobrescrevendo)
-echo "📡 Iniciando listener passivo (apenas C00, sobrescrevendo)..."
+# 2️⃣ Inicia listener passivo com reconexão automática
+echo "📡 Iniciando listener passivo..."
 
 while true; do
-    nc "$IP" "$PORT" \
-    | tr -d '\r' \
-    | while read -r linha; do
-        echo "🔹 Recebido: $linha"  # log bruto
-
-        # Remove > e * do início
-        clean="${linha#>}"
-        clean="${clean#\*}"
-        echo "🔹 Limpo: $clean"  # log limpo
-
-        # Filtra somente C00
-        case "$clean" in
-            D??C00Z*)
-                echo "✅ Gravando no arquivo: $clean"
-                echo "$clean" > "$LOG_FILE"
-                ;;
-            *)
-                echo "⏭️ Ignorado (não é C00)"
-                ;;
-        esac
-    done
-
+    nc "$IP" "$PORT" | tee "$LOG_FILE"
     echo "⚠️ Conexão encerrada. Tentando reconectar em 2s..."
     sleep 2
 done
-
