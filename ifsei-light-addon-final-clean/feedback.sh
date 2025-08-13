@@ -23,9 +23,29 @@ sleep 0.2
 echo "📡 Iniciando listener passivo (apenas C00, sobrescrevendo)..."
 
 while true; do
-    nc "$IP" "$PORT" | while read -r linha; do
-        echo "$linha" > "$LOG_FILE"
+    nc "$IP" "$PORT" \
+    | tr -d '\r' \
+    | while read -r linha; do
+        echo "🔹 Recebido: $linha"  # log bruto
+
+        # Remove > e * do início
+        clean="${linha#>}"
+        clean="${clean#\*}"
+        echo "🔹 Limpo: $clean"  # log limpo
+
+        # Filtra somente C00
+        case "$clean" in
+            D??C00Z*)
+                echo "✅ Gravando no arquivo: $clean"
+                echo "$clean" > "$LOG_FILE"
+                ;;
+            *)
+                echo "⏭️ Ignorado (não é C00)"
+                ;;
+        esac
     done
+
     echo "⚠️ Conexão encerrada. Tentando reconectar em 2s..."
     sleep 2
 done
+
