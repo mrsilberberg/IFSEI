@@ -14,7 +14,7 @@ TOPIC_PREFIX=$(jq -r .mqtt_topic_prefix "$CONFIG")
 LOG_FILE="/config/ifsei_feedback.log"
 
 echo "=============================="
-echo "  IFSEI Add-on - Feedback via MQTT (Debug) "
+echo "  IFSEI Add-on - Feedback via MQTT (com verificação) "
 echo "=============================="
 echo "IP: $IP"
 echo "Porta: $PORT"
@@ -22,19 +22,30 @@ echo "MQTT: $MQTT_USER@$MQTT_HOST:$MQTT_PORT"
 echo "Log: $LOG_FILE"
 echo "=============================="
 
+echo "🔎 Testando conexão MQTT..."
+
+if ! mosquitto_pub -d -h "$MQTT_HOST" -p "$MQTT_PORT" -u "$MQTT_USER" -P "$MQTT_PASS" \
+  -t "$TOPIC_PREFIX/test" -m "IFSEI MQTT connected at $(date)"; then
+  echo "❌ Erro: Falha ao conectar ao broker MQTT!"
+  exit 1
+fi
+
+echo "✅ Conexão MQTT bem-sucedida!"
+
 # Ativa MON6
 echo "⚙️ Ativando MON6..."
 echo -ne '$MON6\r' | nc -w1 "$IP" "$PORT" || true
 sleep 0.5
 
-# Loop de escuta e publicação MQTT com debug
+# Loop principal
 while true; do
   nc "$IP" "$PORT" | tee -a "$LOG_FILE" | while read -r line; do
     if [[ "$line" =~ ^\*?D([0-9]{2}) ]]; then
       MOD="${BASH_REMATCH[1]}"
       TOPIC="$TOPIC_PREFIX/mod${MOD}/feedback"
-      echo "📤 [MQTT DEBUG] → $TOPIC: $line"
-      mosquitto_pub -d -h "$MQTT_HOST" -p "$MQTT_PORT" -u "$MQTT_USER" -P "$MQTT_PASS" -t "$TOPIC" -m "$line"         || echo "❌ Falha ao publicar no tópico $TOPIC" | tee -a /config/mqtt_error.log
+      echo "📤 MQTT → $TOPIC: $line"
+      mosquitto_pub -d -h "$MQTT_HOST" -p "$MQTT_PORT" -u "$MQTT_USER" -P "$MQTT_PASS" -t "$TOPIC" -m "$line" \
+        || echo "❌ Falha ao publicar em $TOPIC" | tee -a /config/mqtt_error.log
     fi
   done
 
