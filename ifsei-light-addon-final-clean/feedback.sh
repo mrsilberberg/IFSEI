@@ -14,7 +14,7 @@ TOPIC_PREFIX=$(jq -r .mqtt_topic_prefix "$CONFIG")
 LOG_FILE="/config/ifsei_feedback.log"
 
 echo "=============================="
-echo "  IFSEI Add-on - Feedback via MQTT (lógica corrigida) "
+echo "  IFSEI Add-on - Feedback via MQTT (penúltima linha) "
 echo "=============================="
 echo "IP: $IP"
 echo "Porta: $PORT"
@@ -23,7 +23,8 @@ echo "Log: $LOG_FILE"
 echo "=============================="
 
 echo "🔎 Testando conexão MQTT..."
-if ! mosquitto_pub -h "$MQTT_HOST" -p "$MQTT_PORT" -u "$MQTT_USER" -P "$MQTT_PASS"   -t "$TOPIC_PREFIX/test" -m "IFSEI MQTT connected at $(date)"; then
+if ! mosquitto_pub -h "$MQTT_HOST" -p "$MQTT_PORT" -u "$MQTT_USER" -P "$MQTT_PASS" \
+  -t "$TOPIC_PREFIX/test" -m "IFSEI MQTT connected at $(date)"; then
   echo "❌ Erro: Falha ao conectar ao broker MQTT!"
   exit 1
 fi
@@ -34,11 +35,11 @@ echo "⚙️ Ativando MON6..."
 echo -ne '$MON6\r' | nc -w1 "$IP" "$PORT" || true
 sleep 0.5
 
-# Loop principal com leitura direta da resposta
+# Loop principal com leitura e publicação da penúltima linha
 while true; do
-  nc "$IP" "$PORT" | tee -a "$LOG_FILE" | while read -r raw_line; do
-    if [[ "$raw_line" =~ \*D[0-9]{2} ]]; then
-      line=$(echo "$raw_line" | grep -o '\*D[0-9]\{2\}[^ >]*')
+  nc "$IP" "$PORT" | tee -a "$LOG_FILE" | while read -r _; do
+    line=$(grep -o '\*D[0-9]\{2\}[^ >]*' "$LOG_FILE" | grep -v '\*IFSEION' | tail -n 2 | head -n 1)
+    if [ -n "$line" ]; then
       MOD=$(echo "$line" | sed -n 's/\*D\([0-9]\{2\}\).*/\1/p')
       TOPIC="$TOPIC_PREFIX/mod${MOD}/feedback"
       echo "📤 MQTT → $TOPIC: $line"
@@ -50,4 +51,3 @@ while true; do
   echo "⚠️ Conexão encerrada. Reabrindo em 2s..."
   sleep 2
 done
-
