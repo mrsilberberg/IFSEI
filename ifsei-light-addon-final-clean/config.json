@@ -1,6 +1,6 @@
 {
   "name": "IFSEI Light",
-  "version": "2.1.43",
+  "version": "2.1.44",
   "slug": "ifsei_light_generator_opts",
   "description": "Gera entidades light.template com base nas opções de configuração do add-on",
   "url": "https://example.com/docs/ifsei_light_generator", 
@@ -11,14 +11,25 @@
     "port": 28000,
     "poll-interval": 5,
     "module-dimmer": ["00", "01"],
-    "module-onoff": ["05", "06"]
+    "module-onoff": ["05", "06"],
+    "mqtt_host": "192.168.1.50",
+    "mqtt_port": 1883,
+    "mqtt_username": "usuario",
+    "mqtt_password": "senha",
+    "mqtt_topic_prefix": "scenario/ifsei"
+    
   },
   "schema": {
     "ip": "str",
     "port": "int",
     "poll-interval": "int",
     "module-dimmer": ["str"],
-    "module-onoff": ["str"]
+    "module-onoff": ["str"],
+    "mqtt_host": "str",
+    "mqtt_port": "int",
+    "mqtt_username": "str",
+    "mqtt_password": "str",
+    "mqtt_topic_prefix": "str"
   },
   "arch": ["amd64", "armv7", "armhf", "aarch64"],
   "startup": "once",
