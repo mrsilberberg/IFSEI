@@ -20,8 +20,7 @@ while true; do
   (
     # Aguarda conexão e ativa MON6 após 1s
     sleep 1
-    echo -ne '$MON6
-'
+    echo -ne '$MON6\r'
     sleep 1
     cat
   ) | nc "$IP" "$PORT" | while read -r line; do
