@@ -14,7 +14,7 @@ TOPIC_PREFIX=$(jq -r .mqtt_topic_prefix "$CONFIG")
 LOG_FILE="/config/ifsei_feedback.log"
 
 echo "=============================="
-echo "  IFSEI Add-on - Feedback via MQTT "
+echo "  IFSEI Add-on - Feedback via MQTT (Debug) "
 echo "=============================="
 echo "IP: $IP"
 echo "Porta: $PORT"
@@ -27,14 +27,14 @@ echo "⚙️ Ativando MON6..."
 echo -ne '$MON6\r' | nc -w1 "$IP" "$PORT" || true
 sleep 0.5
 
-# Loop de escuta e publicação MQTT
+# Loop de escuta e publicação MQTT com debug
 while true; do
   nc "$IP" "$PORT" | tee -a "$LOG_FILE" | while read -r line; do
     if [[ "$line" =~ ^\*?D([0-9]{2}) ]]; then
       MOD="${BASH_REMATCH[1]}"
       TOPIC="$TOPIC_PREFIX/mod${MOD}/feedback"
-      echo "📤 MQTT → $TOPIC: $line"
-      mosquitto_pub -h "$MQTT_HOST" -p "$MQTT_PORT" -u "$MQTT_USER" -P "$MQTT_PASS" -t "$TOPIC" -m "$line"
+      echo "📤 [MQTT DEBUG] → $TOPIC: $line"
+      mosquitto_pub -d -h "$MQTT_HOST" -p "$MQTT_PORT" -u "$MQTT_USER" -P "$MQTT_PASS" -t "$TOPIC" -m "$line"         || echo "❌ Falha ao publicar no tópico $TOPIC" | tee -a /config/mqtt_error.log
     fi
   done
 
