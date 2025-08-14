@@ -1,6 +1,6 @@
 FROM alpine:3.18
 
-RUN apk add --no-cache bash jq netcat-openbsd
+RUN apk add --no-cache bash jq netcat-openbsd mosquitto-clients
 
 COPY run.sh /run.sh
 COPY generate.sh /generate.sh
