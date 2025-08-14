@@ -35,18 +35,16 @@ echo -ne '$MON6\r' | nc -w1 "$IP" "$PORT" || true
 sleep 0.5
 
 # Loop principal com leitura direta da resposta
-while true; do
-  nc "$IP" "$PORT" | tee -a "$LOG_FILE" | while read -r raw_line; do
-    if [[ "$raw_line" =~ \*D[0-9]{2} ]]; then
-      line=$(echo "$raw_line" | grep -o '\*D[0-9]\{2\}[^ >]*')
-      if [ -n "$line" ]; then
-        MOD=$(echo "$line" | sed -n 's/\*D\([0-9]\{2\}\).*/\1/p')
-        TOPIC="$TOPIC_PREFIX/mod${MOD}/feedback"
-        echo "📤 MQTT → $TOPIC: $line"
-        mosquitto_pub -h "$MQTT_HOST" -p "$MQTT_PORT" -u "$MQTT_USER" -P "$MQTT_PASS"           -t "$TOPIC" -m "$line"           || echo "❌ Falha ao publicar em $TOPIC" | tee -a /config/mqtt_error.log
-      fi
-    fi
-  done
+while read -r raw_line; do
+  if [[ "$raw_line" =~ \*D[0-9]{2} ]]; then
+    line=$(echo "$raw_line" | grep -o '\*D[0-9]\{2\}[^ >]*')
+    MOD=$(echo "$line" | sed -n 's/\*D\([0-9]\{2\}\).*/\1/p')
+    TOPIC="$TOPIC_PREFIX/mod${MOD}/feedback"
+    echo "📤 MQTT → $TOPIC: $line"
+    mosquitto_pub -h "$MQTT_HOST" -p "$MQTT_PORT" -u "$MQTT_USER" -P "$MQTT_PASS" -t "$TOPIC" -m "$line" \
+      || echo "❌ Falha ao publicar em $TOPIC" | tee -a /config/mqtt_error.log
+  fi
+done
   echo "⚠️ Conexão encerrada. Reabrindo em 2s..."
   sleep 2
 done
