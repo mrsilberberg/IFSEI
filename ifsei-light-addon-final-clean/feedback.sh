@@ -51,7 +51,7 @@ sleep 0.5
 # Loop principal
 while true; do
   # Captura pacotes recebidos e armazena no log
-  nc -w1 "$IP" "$PORT" >> "$LOG_FILE"
+  nc -w1 "$IP" "$PORT" | tee -a "$LOG_FILE"
 
    # Mantém apenas últimas 200 linhas do log
   #tail -n 200 "$LOG_FILE" > "$LOG_FILE.tmp" && mv "$LOG_FILE.tmp" "$LOG_FILE"
