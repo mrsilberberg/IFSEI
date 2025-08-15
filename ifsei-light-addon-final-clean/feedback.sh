@@ -58,5 +58,5 @@ while true; do
   fi
 
   # Pequena pausa antes de reconectar
-  sleep 0.1
+  sleep 0.2
 done
