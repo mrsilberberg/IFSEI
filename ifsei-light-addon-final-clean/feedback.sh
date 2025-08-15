@@ -48,7 +48,7 @@ while true; do
     echo "📤 MQTT → $TOPIC: $line"
     mosquitto_pub -h "$MQTT_HOST" -p "$MQTT_PORT" -u "$MQTT_USER" -P "$MQTT_PASS" \
       -t "$TOPIC" -m "$line"
-    #LAST_LINE="$line"
+    LAST_LINE="$line"
   fi
 
   sleep 1
