@@ -36,20 +36,27 @@ echo "⚙️ Ativando MON6..."
 echo -ne '$MON6\r' | nc -w1 "$IP" "$PORT" || true
 sleep 0.5
 
-# Loop principal com leitura e publicação da penúltima linha
-while true; do  
-  nc -w1 "$IP" "$PORT" | tee -a "$LOG_FILE"
+# Loop principal
+while true; do
+  # Captura pacotes recebidos e armazena no log
+  nc -w1 "$IP" "$PORT" >> "$LOG_FILE"
 
-  line=$(grep -o '\*D[0-9]\{2\}[^ >]*' "$LOG_FILE" | grep -v '\*IFSEION' | tail -n 1)
+  # Pega a penúltima linha válida (*Dxx) ignorando IFSEION
+  penultima=$(grep -o '\*D[0-9]\{2\}[^ >]*' "$LOG_FILE" \
+              | grep -v '\*IFSEION' \
+              | tail -n 2 | head -n 1)
 
-  if [ -n "$line" ] && [ "$line" != "$LAST_LINE" ]; then
-    MOD=$(echo "$line" | sed -n 's/\*D\([0-9]\{2\}\).*/\1/p')
+  # Publica apenas se for nova
+  if [[ -n "$penultima" && "$penultima" != "$LAST_LINE" ]]; then
+    MOD=$(echo "$penultima" | sed -n 's/\*D\([0-9]\{2\}\).*/\1/p')
     TOPIC="$TOPIC_PREFIX/mod${MOD}/feedback"
-    echo "📤 MQTT → $TOPIC: $line"
-    mosquitto_pub -h "$MQTT_HOST" -p "$MQTT_PORT" -u "$MQTT_USER" -P "$MQTT_PASS" \
-      -t "$TOPIC" -m "$line"
-    LAST_LINE="$line"
+    echo "📤 MQTT → $TOPIC: $penultima"
+    mosquitto_pub -h "$MQTT_HOST" -p "$MQTT_PORT" \
+      -u "$MQTT_USER" -P "$MQTT_PASS" \
+      -t "$TOPIC" -m "$penultima"
+    LAST_LINE="$penultima"
   fi
 
-  sleep 0.5
+  # Pequena pausa antes de reconectar
+  sleep 0.1
 done
