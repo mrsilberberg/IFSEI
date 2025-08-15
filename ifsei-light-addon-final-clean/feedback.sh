@@ -37,21 +37,27 @@ echo -ne '$MON6\r' | nc -w1 "$IP" "$PORT" || true
 sleep 0.5
 
 
-# Loop principal com leitura e publicação da penúltima linha
-while true; do  
-  nc -w1 "$IP" "$PORT" | tee -a "$LOG_FILE"
-  
-  # Última linha válida (sem *IFSEION)
-  line=$(grep -o '\*D[0-9]\{2\}[^ >]*' "$LOG_FILE" | grep -v '\*IFSEION' | tail -n 1)
+# Loop principal com leitura e publicação com data/hora
+while true; do
+  nc -w1 "$IP" "$PORT" | tee -a "$LOG_FILE" | while read -r raw_line; do
+    now=$(date '+%Y-%m-%d %H:%M:%S')
 
-  if [ -n "$line" ] && [ "$line" != "$LAST_LINE" ]; then
-    MOD=$(echo "$line" | sed -n 's/\*D\([0-9]\{2\}\).*/\1/p')
-    TOPIC="$TOPIC_PREFIX/mod${MOD}/feedback"
-    echo "📤 MQTT → $TOPIC: $line"
-    mosquitto_pub -h "$MQTT_HOST" -p "$MQTT_PORT" -u "$MQTT_USER" -P "$MQTT_PASS" \
-      -t "$TOPIC" -m "$line"
-    LAST_LINE="$line"
-  fi
+    [[ "$raw_line" == *"IFSEION"* ]] && continue
+    echo "[$now] 📥 IFSEI → $raw_line"
 
+    if [[ "$raw_line" =~ \*D[0-9]{2} ]]; then
+      line=$(echo "$raw_line" | grep -o '\*D[0-9]\{2\}[^ >]*')
+      if [ -n "$line" ] && [ "$line" != "$LAST_LINE" ]; then
+        MOD=$(echo "$line" | sed -n 's/\*D\([0-9]\{2\}\).*/\1/p')
+        TOPIC="$TOPIC_PREFIX/mod${MOD}/feedback"
+        echo "[$now] 📤 MQTT → $TOPIC: $line"
+        mosquitto_pub -h "$MQTT_HOST" -p "$MQTT_PORT" -u "$MQTT_USER" -P "$MQTT_PASS" \
+          -t "$TOPIC" -m "$line"
+        LAST_LINE="$line"
+      fi
+    fi
+  done
+
+  echo "[$(date '+%Y-%m-%d %H:%M:%S')] 🕒 Aguardando nova resposta... (1s)"
   sleep 1
 done
