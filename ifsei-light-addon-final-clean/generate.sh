@@ -17,7 +17,8 @@ MODULES=("${MOD_DIMMER[@]}" "${MOD_ONOFF[@]}")
 cat > "$OUTPUT" <<EOF
 shell_command:
   ifsei_set: >-
-    /bin/bash -c "echo -ne '\$D{{ mod }}Z{{ zone }}{{ ("%02d") % ((brightness | int * 63 // 255)) }}T0\r' | nc -w1 $IP $PORT"
+    /bin/bash -c "killall -q -9 nc 2>/dev/null; echo -ne '\$D{{ mod }}Z{{ zone }}{{ ("%02d") % ((brightness | int * 63 // 255)) }}T0\r' | nc -w1 $IP $PORT"
+
 
 input_text:
 EOF
