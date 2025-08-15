@@ -1,6 +1,6 @@
 {
   "name": "IFSEI Light",
-  "version": "2.1.54",
+  "version": "2.1.55",
   "slug": "ifsei_light_generator_opts",
   "description": "Gera entidades light.template com base nas opções de configuração do add-on",
   "url": "https://example.com/docs/ifsei_light_generator", 
