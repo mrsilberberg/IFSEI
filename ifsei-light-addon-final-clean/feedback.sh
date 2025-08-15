@@ -36,13 +36,19 @@ echo "⚙️ Ativando MON6..."
 echo -ne '$MON6\r' | nc -w1 "$IP" "$PORT" || true
 sleep 0.5
 
-# Loop principal com leitura e publicação com data/hora
+# Loop principal
 while true; do
-  nc -w1 "$IP" "$PORT" | tee -a "$LOG_FILE"
-  # Última linha válida (sem *IFSEION)
-  line=$(grep -o '\*D[0-9]\{2\}[^ >]*' "$LOG_FILE" | grep -v '\*IFSEION' | tail -n 1)
-  now=$(date '+%Y-%m-%d %H:%M:%S')
+  raw_line=$(nc -w1 "$IP" "$PORT")
+  echo "$raw_line" >> "$LOG_FILE"
 
+  if [[ "$raw_line" == *"IFSEION"* ]]; then
+    continue  # não exibe no terminal
+  fi
+
+  now=$(date '+%Y-%m-%d %H:%M:%S')
+  echo "[$now] 📥 IFSEI → $raw_line"
+
+  line=$(echo "$raw_line" | grep -o '\*D[0-9]\{2\}[^ >]*' | tail -n 1)
   if [ -n "$line" ] && [ "$line" != "$LAST_LINE" ]; then
     MOD=$(echo "$line" | sed -n 's/\*D\([0-9]\{2\}\).*/\1/p')
     TOPIC="$TOPIC_PREFIX/mod${MOD}/feedback"
@@ -54,3 +60,4 @@ while true; do
 
   sleep 1
 done
+
