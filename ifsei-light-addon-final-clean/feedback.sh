@@ -14,6 +14,11 @@ LAST_LINE=""
 
 LOG_FILE="/config/ifsei_feedback.log"
 
+# Carrega lista de módulos do options.json
+readarray -t MOD_DIMMER < <(jq -r '.["module-dimmer"][]?' "$CONFIG")
+readarray -t MOD_ONOFF  < <(jq -r '.["module-onoff"][]?' "$CONFIG")
+MODULES=("${MOD_DIMMER[@]}" "${MOD_ONOFF[@]}")
+
 echo "=============================="
 echo "  IFSEI Add-on - Feedback via MQTT (penúltima linha) "
 echo "=============================="
@@ -21,6 +26,7 @@ echo "IP: $IP"
 echo "Porta: $PORT"
 echo "MQTT: $MQTT_USER@$MQTT_HOST:$MQTT_PORT"
 echo "Log: $LOG_FILE"
+echo "Módulos: ${MODULES[*]}"
 echo "=============================="
 
 echo "🔎 Testando conexão MQTT..."
@@ -47,16 +53,29 @@ while true; do
               | tail -n 2 | head -n 1)
 
   # Publica apenas se for nova
+  # Publica apenas se for nova
   if [[ -n "$penultima" && "$penultima" != "$LAST_LINE" ]]; then
-    MOD=$(echo "$penultima" | sed -n 's/\*D\([0-9]\{2\}\).*/\1/p')
-    TOPIC="$TOPIC_PREFIX/mod${MOD}/feedback"
-    echo "📤 MQTT → $TOPIC: $penultima"
-    mosquitto_pub -h "$MQTT_HOST" -p "$MQTT_PORT" \
-      -u "$MQTT_USER" -P "$MQTT_PASS" \
-      -t "$TOPIC" -m "$penultima"
     LAST_LINE="$penultima"
+    echo "[EVENTO NOVO DETECTADO] $penultima"
+
+    for MOD_REQ in "${MODULES[@]}"; do
+      echo "📡 Solicitando status do módulo $MOD_REQ"
+      resposta=$(echo -ne "\$D${MOD_REQ}ST\r" | nc -w1 "$IP" "$PORT" \
+                 | grep -o '\*D[0-9].*' | grep -v '\*IFSEION')
+
+      if [[ -n "$resposta" ]]; then
+        echo "[STATUS M${MOD_REQ}] $resposta"
+        echo "$resposta" >> "$LOG_FILE"
+
+        # Atualiza entidade de feedback no Home Assistant
+        ha entity update "input_text.ifsei_mod${MOD_REQ}_feedback" --value "$resposta" || true
+      else
+        echo "[AVISO] Nenhum retorno para módulo $MOD_REQ"
+      fi
+
+      sleep 0.05
+    done
   fi
 
-  # Pequena pausa antes de reconectar
   sleep 0.05
 done
