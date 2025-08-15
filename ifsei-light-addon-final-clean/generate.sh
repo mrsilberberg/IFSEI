@@ -23,13 +23,13 @@ shell_command:
 
   ifsei_set: >-
     bash -c "pkill -9 nc 2>/dev/null || true;
-    sleep 0.02;
+    sleep 0.01;
     pkill -9 nc 2>/dev/null || true;
-    sleep 0.02;
+    sleep 0.01;
     echo -ne '\$D{{ mod }}Z{{ zone }}{{ ("%02d") % ((brightness | int * 63 // 255)) }}T0\r' | nc -w1 $IP $PORT;
-    sleep 0.02;
+    sleep 0.01;
     echo -ne '\$D{{ mod }}Z{{ zone }}{{ ("%02d") % ((brightness | int * 63 // 255)) }}T0\r' | nc -w1 $IP $PORT;
-    sleep 0.02;
+    sleep 0.01;
     echo -ne '\$D{{ mod }}Z{{ zone }}{{ ("%02d") % ((brightness | int * 63 // 255)) }}T0\r' | nc -w1 $IP $PORT"
   
 input_text:
