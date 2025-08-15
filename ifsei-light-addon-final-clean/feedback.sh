@@ -10,6 +10,7 @@ MQTT_PORT=$(jq -r .mqtt_port "$CONFIG")
 MQTT_USER=$(jq -r .mqtt_username "$CONFIG")
 MQTT_PASS=$(jq -r .mqtt_password "$CONFIG")
 TOPIC_PREFIX=$(jq -r .mqtt_topic_prefix "$CONFIG")
+LAST_LINE=""
 
 LOG_FILE="/config/ifsei_feedback.log"
 
@@ -34,6 +35,7 @@ echo "✅ Conexão MQTT bem-sucedida!"
 echo "⚙️ Ativando MON6..."
 echo -ne '$MON6\r' | nc -w1 "$IP" "$PORT" || true
 sleep 0.5
+
 
 # Loop principal com leitura e publicação da penúltima linha
 while true; do  
