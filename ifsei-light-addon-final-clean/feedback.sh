@@ -51,5 +51,5 @@ while true; do
     LAST_LINE="$line"
   fi
 
-  sleep 1
+  sleep 0.5
 done
