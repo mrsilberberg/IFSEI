@@ -36,18 +36,20 @@ echo -ne '$MON6\r' | nc -w1 "$IP" "$PORT" || true
 sleep 0.5
 
 # Loop principal com leitura e publicação da penúltima linha
-while true; do
-  nc "$IP" "$PORT" | tee -a "$LOG_FILE" | while read -r _; do
-    line=$(grep -o '\*D[0-9]\{2\}[^ >]*' "$LOG_FILE" | grep -v '\*IFSEION' | tail -n 2 | head -n 1)
-    if [ -n "$line" ]; then
-      MOD=$(echo "$line" | sed -n 's/\*D\([0-9]\{2\}\).*/\1/p')
-      TOPIC="$TOPIC_PREFIX/mod${MOD}/feedback"
-      echo "📤 MQTT → $TOPIC: $line"
-      mosquitto_pub -h "$MQTT_HOST" -p "$MQTT_PORT" -u "$MQTT_USER" -P "$MQTT_PASS" \
-        -t "$TOPIC" -m "$line" \
-        || echo "❌ Falha ao publicar em $TOPIC" | tee -a /config/mqtt_error.log
-    fi
-  done
-  echo "⚠️ Conexão encerrada. Reabrindo em 2s..."
-  sleep 2
+while true; do  
+  nc -w1 "$IP" "$PORT" | tee -a "$LOG_FILE"
+  
+  # Última linha válida (sem *IFSEION)
+  line=$(grep -o '\*D[0-9]\{2\}[^ >]*' "$LOG_FILE" | grep -v '\*IFSEION' | tail -n 1)
+
+  if [ -n "$line" ] && [ "$line" != "$LAST_LINE" ]; then
+    MOD=$(echo "$line" | sed -n 's/\*D\([0-9]\{2\}\).*/\1/p')
+    TOPIC="$TOPIC_PREFIX/mod${MOD}/feedback"
+    echo "📤 MQTT → $TOPIC: $line"
+    mosquitto_pub -h "$MQTT_HOST" -p "$MQTT_PORT" -u "$MQTT_USER" -P "$MQTT_PASS" \
+      -t "$TOPIC" -m "$line"
+    LAST_LINE="$line"
+  fi
+
+  sleep 1
 done
