@@ -14,10 +14,16 @@ LAST_LINE=""
 
 LOG_FILE="/config/ifsei_feedback.log"
 
+# Tempo mínimo entre requisições por módulo (segundos)
+MIN_INTERVAL=2
+
 # Carrega lista de módulos do options.json
 readarray -t MOD_DIMMER < <(jq -r '.["module-dimmer"][]?' "$CONFIG")
 readarray -t MOD_ONOFF  < <(jq -r '.["module-onoff"][]?' "$CONFIG")
 MODULES=("${MOD_DIMMER[@]}" "${MOD_ONOFF[@]}")
+
+# Armazena último envio para cada módulo
+declare -A LAST_REQ_TIME
 
 echo "=============================="
 echo "  IFSEI Add-on - Feedback via MQTT (penúltima linha) "
@@ -47,13 +53,15 @@ while true; do
   # Captura pacotes recebidos e armazena no log
   nc -w1 "$IP" "$PORT" >> "$LOG_FILE"
 
+   # Mantém apenas últimas 200 linhas do log
+  #tail -n 200 "$LOG_FILE" > "$LOG_FILE.tmp" && mv "$LOG_FILE.tmp" "$LOG_FILE"
+
   # Pega a penúltima linha válida (*Dxx) ignorando IFSEION
   penultima=$(grep -o '\*D[0-9]\{2\}[^ >]*' "$LOG_FILE" \
               | grep -v '\*IFSEION' \
               | tail -n 2 | head -n 1)
 
-  # Publica apenas se for nova
-  # Publica apenas se for nova
+ # Processa apenas se for nova
   if [[ -n "$penultima" && "$penultima" != "$LAST_LINE" ]]; then
     LAST_LINE="$penultima"
     echo "[EVENTO NOVO DETECTADO] $penultima"
