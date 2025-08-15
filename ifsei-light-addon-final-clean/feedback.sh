@@ -50,7 +50,7 @@ sleep 0.5
 while true; do
   echo "[INFO] Conectando ao IFSEI..."
   
-  nc "$IP" "$PORT" | tee -a "$LOG_FILE" | while read -r line; do
+  nc -w1 "$IP" "$PORT" | tee -a "$LOG_FILE" | while read -r line; do
     echo "[RECEBIDO] $line"
 
     # Filtra apenas feedbacks *Dxx e ignora *IFSEION
