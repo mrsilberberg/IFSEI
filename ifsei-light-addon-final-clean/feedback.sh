@@ -38,7 +38,7 @@ sleep 0.5
 
 # Loop principal com leitura e publicação da penúltima linha
 while true; do  
-  nc -w1 "$IP" "$PORT" | tee -a "$LOG_FILE" | grep -v '\*IFSEION' | tail -n 1
+  nc -w1 "$IP" "$PORT" | tee -a "$LOG_FILE"
   
   # Última linha válida (sem *IFSEION)
   line=$(grep -o '\*D[0-9]\{2\}[^ >]*' "$LOG_FILE" | grep -v '\*IFSEION' | tail -n 1)
