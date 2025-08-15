@@ -11,7 +11,6 @@ MQTT_USER=$(jq -r .mqtt_username "$CONFIG")
 MQTT_PASS=$(jq -r .mqtt_password "$CONFIG")
 TOPIC_PREFIX=$(jq -r .mqtt_topic_prefix "$CONFIG")
 LAST_LINE=""
-
 LOG_FILE="/config/ifsei_feedback.log"
 
 # Tempo mínimo entre requisições por módulo (segundos)
@@ -26,13 +25,12 @@ MODULES=("${MOD_DIMMER[@]}" "${MOD_ONOFF[@]}")
 declare -A LAST_REQ_TIME
 
 echo "=============================="
-echo "  IFSEI Add-on - Feedback via MQTT (penúltima linha) "
+echo "  IFSEI Add-on - Feedback em tempo real com reconexão"
 echo "=============================="
 echo "IP: $IP"
 echo "Porta: $PORT"
-echo "MQTT: $MQTT_USER@$MQTT_HOST:$MQTT_PORT"
-echo "Log: $LOG_FILE"
 echo "Módulos: ${MODULES[*]}"
+echo "Log: $LOG_FILE"
 echo "=============================="
 
 echo "🔎 Testando conexão MQTT..."
@@ -48,42 +46,47 @@ echo "⚙️ Ativando MON6..."
 echo -ne '$MON6\r' | nc -w1 "$IP" "$PORT" || true
 sleep 0.5
 
-# Loop principal
+# Loop de reconexão
 while true; do
-  # Captura pacotes recebidos e armazena no log
-  nc -w1 "$IP" "$PORT" | tee -a "$LOG_FILE"
+  echo "[INFO] Conectando ao IFSEI..."
+  
+  nc "$IP" "$PORT" | tee -a "$LOG_FILE" | while read -r line; do
+    echo "[RECEBIDO] $line"
 
-   # Mantém apenas últimas 200 linhas do log
-  #tail -n 200 "$LOG_FILE" > "$LOG_FILE.tmp" && mv "$LOG_FILE.tmp" "$LOG_FILE"
+    # Filtra apenas feedbacks *Dxx e ignora *IFSEION
+    if [[ "$line" =~ ^\*D[0-9]{2} ]] && [[ "$line" != *IFSEION* ]]; then
+      if [[ "$line" != "$LAST_LINE" ]]; then
+        LAST_LINE="$line"
+        echo "[EVENTO NOVO DETECTADO] $line"
 
-  # Pega a penúltima linha válida (*Dxx) ignorando IFSEION
-  penultima=$(grep -o '\*D[0-9]\{2\}[^ >]*' "$LOG_FILE" \
-              | grep -v '\*IFSEION' \
-              | tail -n 2 | head -n 1)
+        now=$(date +%s)
 
- # Processa apenas se for nova
-  if [[ -n "$penultima" && "$penultima" != "$LAST_LINE" ]]; then
-    LAST_LINE="$penultima"
-    echo "[EVENTO NOVO DETECTADO] $penultima"
+        for MOD_REQ in "${MODULES[@]}"; do
+          last_time=${LAST_REQ_TIME[$MOD_REQ]:-0}
+          if (( now - last_time < MIN_INTERVAL )); then
+            echo "[INFO] Ignorando módulo $MOD_REQ (intervalo mínimo não atingido)"
+            continue
+          fi
 
-    for MOD_REQ in "${MODULES[@]}"; do
-      echo "📡 Solicitando status do módulo $MOD_REQ"
-      resposta=$(echo -ne "\$D${MOD_REQ}ST\r" | nc -w1 "$IP" "$PORT" \
-                 | grep -o '\*D[0-9].*' | grep -v '\*IFSEION')
+          echo "📡 Solicitando status do módulo $MOD_REQ"
+          resposta=$(echo -ne "\$D${MOD_REQ}ST\r" | nc -w1 "$IP" "$PORT" \
+                     | grep -o '\*D[0-9].*' | grep -v '\*IFSEION')
 
-      if [[ -n "$resposta" ]]; then
-        echo "[STATUS M${MOD_REQ}] $resposta"
-        echo "$resposta" >> "$LOG_FILE"
+          if [[ -n "$resposta" ]]; then
+            echo "[STATUS M${MOD_REQ}] $resposta"
+            echo "$resposta" >> "$LOG_FILE"
+            ha entity update "input_text.ifsei_mod${MOD_REQ}_feedback" --value "$resposta" || true
+            LAST_REQ_TIME[$MOD_REQ]=$now
+          else
+            echo "[AVISO] Nenhum retorno para módulo $MOD_REQ"
+          fi
 
-        # Atualiza entidade de feedback no Home Assistant
-        ha entity update "input_text.ifsei_mod${MOD_REQ}_feedback" --value "$resposta" || true
-      else
-        echo "[AVISO] Nenhum retorno para módulo $MOD_REQ"
+          sleep 0.05
+        done
       fi
+    fi
+  done
 
-      sleep 0.05
-    done
-  fi
-
-  sleep 0.05
+  echo "[WARN] Conexão perdida. Tentando reconectar em 1s..."
+  sleep 1
 done
