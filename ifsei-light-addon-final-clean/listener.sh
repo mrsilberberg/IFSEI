@@ -12,7 +12,7 @@ echo $$ > "$PID_FILE"  # Guarda o PID do próprio processo
 
 while true; do
   echo "[INFO] Conectando..."
-  nc -w2 "$IP" "$PORT" | tee -a "$LOG_FILE"
+  timeout 21600 nc -w1 "$IP" "$PORT" | tee -a "$LOG_FILE"
   echo "[WARN] Conexão perdida. Tentando reconectar..."
   sleep 0.2
 done
