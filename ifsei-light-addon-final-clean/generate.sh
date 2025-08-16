@@ -30,11 +30,10 @@ shell_command:
       SLUG=$(cat /config/.storage/Drivers/Scenario/ifsei_slug.txt);
       ha addons exec "$SLUG" "killall nc 2>/dev/null || true";
       sleep 0.05;
-      ha addons exec "$SLUG" "echo -ne \"\$D{{ mod }}Z{{ zone }}{{ (\"%02d\") % ((brightness | int * 63 // 255)) }}T0\r\" | nc -w1 $IP $PORT";
+      echo -ne "\$D{{ mod }}Z{{ zone }}{{ '%02d' | format((brightness | int * 63 // 255)) }}T0\r" | nc -w1 '"$IP $PORT"';
       sleep 0.05;
       ha addons exec "$SLUG" "/listener.sh &"
     '
-
   
 input_text:
 EOF
