@@ -1,6 +1,6 @@
 FROM alpine:3.18
 
-RUN apk add --no-cache bash jq netcat-openbsd mosquitto-clients
+RUN apk add --no-cache bash jq netcat-openbsd mosquitto-clients curl
 
 # Copia scripts para dentro do container
 COPY run.sh /run.sh
