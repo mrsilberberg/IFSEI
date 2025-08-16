@@ -37,5 +37,5 @@
   "map": ["config:rw"],
   "host_network": true,
   "hassio_api": true,
-  "hassio_role": default
+  "hassio_role": "default"
 }
