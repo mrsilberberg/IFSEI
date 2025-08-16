@@ -17,24 +17,28 @@ readarray -t MOD_DIMMER < <(jq -r '.["module-dimmer"][]?' "$CONFIG")
 readarray -t MOD_ONOFF  < <(jq -r '.["module-onoff"][]?' "$CONFIG")
 MODULES=("${MOD_DIMMER[@]}" "${MOD_ONOFF[@]}")
 
+
 # Início do YAML unificado
 cat > "$OUTPUT" <<EOF
 shell_command:
   #ifsei_set: >-
     #/bin/bash -c echo -ne '\$D{{ mod }}Z{{ zone }}{{ ("%02d") % ((brightness | int * 63 // 255)) }}T0\r' | nc -w1 $IP $PORT"
   
-  ifsei_stop_nc: "bash -c '/stop_nc.sh'"
+  #ifsei_stop_nc: "bash -c '/stop_nc.sh'"
+
+  #ifsei_set: >-
+   # bash -c '
+    #  SLUG=$(cat /config/.storage/Drivers/Scenario/ifsei_slug.txt);
+     # docker exec -it "$SLUG" bash -c "killall nc 2>/dev/null || true";
+     # sleep 0.05;
+     # echo -ne "\$D{{ mod }}Z{{ zone }}{{ '%02d' | format((brightness | int * 63 // 255)) }}T0\r" |
+     #   nc -w1 192.168.1.20 28000;
+     # sleep 0.05;
+     # docker exec "$SLUG" nohup /listener.sh >/dev/null 2>&1 &
+    # '
 
   ifsei_set: >-
-    bash -c '
-      SLUG=$(cat /config/.storage/Drivers/Scenario/ifsei_slug.txt);
-      docker exec -it "$SLUG" bash -c "killall nc 2>/dev/null || true";
-      sleep 0.05;
-      echo -ne "\$D{{ mod }}Z{{ zone }}{{ '%02d' | format((brightness | int * 63 // 255)) }}T0\r" |
-        nc -w1 192.168.1.20 28000;
-      sleep 0.05;
-      docker exec "$SLUG" nohup /listener.sh >/dev/null 2>&1 &
-    '
+    ha addons exec "$SLUG" "/send_ifsei_cmd.sh {{ mod }} {{ zone }} {{ brightness }}"
   
 input_text:
 EOF
