@@ -16,7 +16,7 @@ echo "=============================="
 
 while true; do
   echo "[INFO] Conectando ao IFSEI para captura..."
-  nc "$IP" "$PORT" | tee -a "$LOG_FILE"
+  nc -w1 "$IP" "$PORT" | tee -a "$LOG_FILE"
   echo "[WARN] Conexão perdida. Tentando reconectar..."
   sleep 1
 done
