@@ -1,8 +1,12 @@
 #!/usr/bin/env bash
-echo "Gerando arquivos YAML e comandos..."
-/generate.sh
-echo "Finalizado."
+set -e
 
-echo "Iniciando monitoramento de feedback..."
-/feedback.sh &
-sleep infinity
+echo "[INFO] Gerando arquivos YAML..."
+/generate.sh
+echo "[INFO] Arquivos gerados."
+
+echo "[INFO] Iniciando listener de feedback..."
+/listener.sh &
+
+echo "[INFO] Iniciando parser de feedback..."
+/parser.sh
