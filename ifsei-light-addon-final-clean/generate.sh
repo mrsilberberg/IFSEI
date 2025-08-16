@@ -22,13 +22,10 @@ shell_command:
   ifsei_stop_nc: "bash -c '/stop_nc.sh'"
 
   ifsei_set: >-
-    bash -c "pkill -9 nc 2>/dev/null || true;
-    sleep 0.005;
-    pkill -9 nc 2>/dev/null || true;
-    sleep 0.005;
-    echo -ne '\$D{{ mod }}Z{{ zone }}{{ ("%02d") % ((brightness | int * 63 // 255)) }}T0\r' | nc -w1 $IP $PORT;
-    sleep 0.005;
-    echo -ne '\$D{{ mod }}Z{{ zone }}{{ ("%02d") % ((brightness | int * 63 // 255)) }}T0\r' | nc -w1 $IP $PORT"
+    bash -c "/stop_listener.sh;
+    sleep 0.10;
+    echo -ne '$D{{ mod }}Z{{ zone }}{{ ("%02d") % ((brightness | int * 63 // 255)) }}T0\r' |
+    nc -w1 192.168.1.20 28000"
 
   
 input_text:
