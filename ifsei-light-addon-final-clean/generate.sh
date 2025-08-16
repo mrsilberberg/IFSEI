@@ -6,6 +6,10 @@ OUTPUT="$BASE/ifsei_lights.yaml"
 
 mkdir -p "$BASE"
 
+# Captura o slug do próprio container e salva em Scenario/ifsei_slug.txt
+SLUG=${HOSTNAME#addon_}
+echo "$SLUG" > "$BASE/ifsei_slug.txt"
+
 IP=$(jq -r .ip "$CONFIG")
 PORT=$(jq -r .port "$CONFIG")
 
