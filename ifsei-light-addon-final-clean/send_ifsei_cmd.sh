@@ -1,40 +1,37 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Args vindos do HA
-MOD="$1"
-ZONE="$2"
-BRIGHTNESS="$3"
-
 CONFIG="/data/options.json"
 IP=$(jq -r .ip "$CONFIG")
 PORT=$(jq -r .port "$CONFIG")
 
-# Script listener que precisa ser reiniciado
-LISTENER="/listener.sh"
+MOD="$1"
+ZONE="$2"
+BRIGHTNESS="$3"
 
-# Calcula valor (0–63) a partir do brilho (0–255)
+PID_FILE="/tmp/listener.pid"
+
+# Converte brightness (0-255) para escala IFSEI (00–63)
 LEVEL=$(printf "%02d" $(( BRIGHTNESS * 63 / 255 )))
 
-echo "[INFO] Enviando comando IFSEI → Mód:$MOD Zona:$ZONE Nível:$LEVEL"
+CMD="\$D${MOD}Z${ZONE}${LEVEL}T0\r"
 
-# 1. Derruba netcats antigos (listener usa nc em loop)
-killall nc 2>/dev/null || true
-sleep 0.05
-killall nc 2>/dev/null || true
-sleep 0.05
+echo "[INFO] Preparando para enviar comando: $CMD"
 
-# 2. Envia o comando para o módulo
-echo -ne "\$D${MOD}Z${ZONE}${LEVEL}T0\r" | nc -w1 "$IP" "$PORT"
-sleep 0.05
-echo -ne "\$D${MOD}Z${ZONE}${LEVEL}T0\r" | nc -w1 "$IP" "$PORT"
-
-# 3. Reinicia listener em background
-if pgrep -f "$LISTENER" >/dev/null; then
-  echo "[INFO] Listener já em execução."
-else
-  echo "[INFO] Reiniciando listener..."
-  nohup "$LISTENER" >/dev/null 2>&1 &
+# 1. Para listener atual
+if [[ -f "$PID_FILE" ]]; then
+  PID=$(cat "$PID_FILE")
+  if kill -0 "$PID" 2>/dev/null; then
+    echo "[INFO] Encerrando listener (PID $PID)..."
+    kill -9 "$PID" || true
+  fi
+  rm -f "$PID_FILE"
 fi
 
-echo "[INFO] Comando enviado e listener garantido em execução."
+# 2. Envia comando
+echo -ne "$CMD" | nc -w1 "$IP" "$PORT"
+sleep 0.05
+echo -ne "$CMD" | nc -w1 "$IP" "$PORT"
+
+echo "[INFO] Comando enviado para $IP:$PORT → $CMD"
+echo "[INFO] Listener irá reconectar automaticamente..."
