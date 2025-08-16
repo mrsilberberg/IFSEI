@@ -28,11 +28,12 @@ shell_command:
   ifsei_set: >-
     bash -c '
       SLUG=$(cat /config/.storage/Drivers/Scenario/ifsei_slug.txt);
-      ha addons exec "$SLUG" "killall nc 2>/dev/null || true";
+      docker exec -it "$SLUG" bash -c "killall nc 2>/dev/null || true";
       sleep 0.05;
-      echo -ne "\$D{{ mod }}Z{{ zone }}{{ '%02d' | format((brightness | int * 63 // 255)) }}T0\r" | nc -w1 '"$IP $PORT"';
+      echo -ne "\$D{{ mod }}Z{{ zone }}{{ '%02d' | format((brightness | int * 63 // 255)) }}T0\r" |
+        nc -w1 192.168.1.20 28000;
       sleep 0.05;
-      ha addons exec "$SLUG" "/listener.sh &"
+      docker exec "$SLUG" nohup /listener.sh >/dev/null 2>&1 &
     '
   
 input_text:
