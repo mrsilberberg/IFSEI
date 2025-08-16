@@ -13,6 +13,8 @@ echo $$ > "$PID_FILE"  # Guarda o PID do próprio processo
 while true; do
   echo "[INFO] Conectando..."
   nc "$IP" "$PORT" | tee -a "$LOG_FILE"
+
+  tail -n 500 "$LOG_FILE" > "$LOG_FILE.tmp" && mv "$LOG_FILE.tmp" "$LOG_FILE"
   echo "[WARN] Conexão perdida. Tentando reconectar..."
   sleep 0.2
 done
