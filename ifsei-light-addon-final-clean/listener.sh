@@ -14,5 +14,5 @@ while true; do
   echo "[INFO] Conectando..."
   nc -w86400 "$IP" "$PORT" | tee -a "$LOG_FILE"
   echo "[WARN] Conexão perdida. Tentando reconectar..."
-  sleep 1
+  sleep 0.15
 done
